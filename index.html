@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ink Oshigoto｜推しごとノート</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="icon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="icon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+<meta name="theme-color" content="#232B4D">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Oshigoto">
+<style>
+  :root{
+    --paper: #F7F3EA;
+    --paper-card: #FFFDF8;
+    --ink: #232B4D;
+    --ink-soft: #4A5178;
+    --muted: #8A8578;
+    --line: #E4DECF;
+    --deep1: #B7C4D6;
+    --deep2: #7C8FA6;
+    --deep3: #4A5A78;
+    --deep4: #232B4D;
+    --accent-soft: #EFE6D3;
+    --warn: #B9502F;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    background-image: radial-gradient(circle at 1px 1px, rgba(35,43,77,0.05) 1px, transparent 0);
+    background-size: 22px 22px;
+    font-family:'Zen Kaku Gothic New', sans-serif;
+    color:var(--ink);
+    padding:24px 16px 70px;
+  }
+  .wrap{max-width:520px;margin:0 auto;}
+  header{margin-bottom:22px;}
+  h1{
+    font-family:'Shippori Mincho', serif;
+    font-weight:700;
+    font-size:26px;
+    margin:0 0 4px;
+    letter-spacing:0.03em;
+  }
+  .sub{color:var(--muted);font-size:12.5px;}
+
+  .oshi-tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin:18px 0 14px;}
+  .oshi-tab{
+    flex-shrink:0;padding:8px 16px;border-radius:999px;
+    background:var(--paper-card);border:1px solid var(--line);
+    font-size:13px;cursor:pointer;white-space:nowrap;
+  }
+  .oshi-tab.active{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+  .oshi-tab.add{color:var(--warn);border-color:var(--warn);font-weight:700;}
+
+  .btn{
+    cursor:pointer;background:var(--ink);color:var(--paper);border:none;
+    font-family:inherit;font-size:14px;font-weight:500;border-radius:8px;
+    padding:10px 16px;letter-spacing:0.02em;
+  }
+  .btn.ghost{background:transparent;color:var(--ink-soft);border:1px solid var(--line);}
+  .btn.danger{background:transparent;color:var(--warn);border:1px solid var(--warn);}
+  .btn.block{width:100%;}
+  .btn-row{display:flex;gap:8px;margin-top:18px;}
+
+  .hero-card{
+    background:var(--paper-card);border:1px solid var(--line);border-radius:16px;
+    padding:22px;text-align:center;margin-bottom:20px;
+  }
+  .oshi-name{font-family:'Shippori Mincho', serif;font-size:22px;font-weight:700;margin-bottom:14px;}
+  .photo-circle{
+    width:104px;height:104px;border-radius:50%;margin:0 auto 12px;
+    background:var(--accent-soft);border:3px solid var(--paper-card);
+    box-shadow:0 0 0 2px var(--line);
+    overflow:hidden;display:flex;align-items:center;justify-content:center;
+    position:relative;cursor:pointer;
+  }
+  .photo-circle img{width:100%;height:100%;object-fit:cover;}
+  .photo-circle .placeholder-icon{font-size:34px;opacity:0.5;}
+  .photo-hint{
+    position:absolute;bottom:0;left:0;right:0;background:rgba(35,43,77,0.55);
+    color:#fff;font-size:9px;text-align:center;padding:3px 0;letter-spacing:0.02em;
+  }
+  .days-text{font-family:'Shippori Mincho', serif;font-size:17px;font-weight:700;margin-bottom:2px;}
+  .days-text .accent{color:var(--warn);}
+  .day-caption{color:var(--muted);font-size:12px;}
+
+  .field{
+    background:var(--paper-card);border:1px solid var(--line);border-radius:14px;
+    padding:16px 18px;margin-bottom:12px;
+  }
+  .field-label{
+    font-size:11.5px;color:var(--muted);letter-spacing:0.04em;
+    display:flex;align-items:center;gap:6px;margin-bottom:8px;
+  }
+  .field-icon{font-size:13px;}
+  .field input, .field textarea{
+    width:100%;border:1px solid var(--line);border-radius:8px;
+    font-family:inherit;font-size:14px;padding:9px 11px;background:#fff;color:var(--ink);
+  }
+  .field textarea{resize:vertical;min-height:64px;line-height:1.7;}
+  .field .value-text{font-size:14px;line-height:1.8;white-space:pre-wrap;}
+  .field .value-empty{color:var(--muted);font-size:13px;font-style:italic;}
+  .field.ng{border-color:#E0B9A8;}
+  .field.ng .field-label{color:var(--warn);}
+
+  .empty-state{
+    text-align:center;padding:60px 20px;color:var(--muted);
+    border:1px dashed var(--line);border-radius:14px;font-size:14px;line-height:1.9;
+  }
+
+  .modal-bg{
+    display:none;position:fixed;inset:0;background:rgba(35,43,77,0.4);
+    align-items:flex-end;justify-content:center;z-index:50;
+  }
+  .modal-bg.open{display:flex;}
+  .modal{
+    background:var(--paper);width:100%;max-width:520px;max-height:88vh;overflow-y:auto;
+    border-radius:20px 20px 0 0;padding:22px 20px 28px;
+  }
+  .modal h2{font-family:'Shippori Mincho', serif;font-size:18px;margin:0 0 16px;}
+  .modal label{display:block;font-size:11.5px;color:var(--muted);margin:14px 0 5px;letter-spacing:0.03em;}
+  .modal input, .modal textarea{
+    width:100%;border:1px solid var(--line);border-radius:8px;
+    font-family:inherit;font-size:14px;padding:9px 11px;background:#fff;color:var(--ink);
+  }
+  .modal textarea{resize:vertical;min-height:60px;}
+  .photo-preview-thumb{
+    width:72px;height:72px;border-radius:50%;object-fit:cover;
+    border:2px solid var(--line);
+  }
+
+  footer{
+    margin-top:44px;padding-top:18px;border-top:1px solid var(--line);
+    text-align:center;color:var(--muted);font-size:11.5px;line-height:2;
+  }
+  footer a{color:var(--warn);text-decoration:none;font-weight:500;}
+  footer a:hover{text-decoration:underline;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Ink Oshigoto</h1>
+    <div class="sub">応援してるあの人との歴史を、ここに。</div>
+  </header>
+
+  <div class="oshi-tabs" id="oshiTabs"></div>
+
+  <div id="mainArea"></div>
+
+  <footer>
+    <div>Ink Oshigoto is <a href="#" target="_blank" rel="noopener">open source</a>. データはこの端末の中だけに保存され、どこにも送信されません。</div>
+    <div style="margin-top:6px;"><a href="privacy.html">プライバシーポリシー</a>　・　<a href="terms.html">利用規約</a></div>
+  </footer>
+</div>
+
+<!-- 推し追加/編集モーダル -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h2 id="modalTitle">推しを登録する</h2>
+
+    <label>推しの名前</label>
+    <input type="text" id="f_name" placeholder="ライバー名">
+
+    <label>推しの写真（任意）</label>
+    <input type="file" id="f_photo" accept="image/*">
+    <div id="photoPreviewWrap" style="margin-top:8px;"></div>
+
+    <label>① 初めて出会った日</label>
+    <input type="date" id="f_metDate">
+
+    <label>② 好きなこと（アーティスト・音楽・嗜好品など）</label>
+    <textarea id="f_likes" placeholder="推しの好きなものをメモ"></textarea>
+
+    <label>③ バッジ獲得記念日</label>
+    <textarea id="f_badges" placeholder="例：2026/03/12 ★5バッジ獲得"></textarea>
+
+    <label>④ 大きなギフトを送った日（あふおも等）</label>
+    <textarea id="f_gifts" placeholder="例：2026/05/01 あふおも初投げ"></textarea>
+
+    <label>⑤ ライバーの誕生日</label>
+    <input type="date" id="f_birthday">
+
+    <label>⑥ ライバーの初配信日</label>
+    <input type="date" id="f_debut">
+
+    <label>⑦ 弾幕記入欄</label>
+    <textarea id="f_danmaku" placeholder="お気に入りの弾幕をここに"></textarea>
+
+    <label>⑧ 自由記述欄（NG事項・気をつけたいこと）</label>
+    <textarea id="f_ng" placeholder="話してほしくない話題、地雷ワードなど"></textarea>
+
+    <div class="btn-row">
+      <button class="btn ghost block" onclick="closeModal()">キャンセル</button>
+      <button class="btn block" onclick="saveOshi()">保存する</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = "ink_oshigoto_entries";
+let oshiList = [];
+let activeId = null;
+let editingId = null;
+let pendingPhoto = null; // 保存待ちの写真dataURL（未変更ならnullのまま）
+
+function resizeImageFile(file, maxSize){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = (e)=>{
+      const img = new Image();
+      img.onload = ()=>{
+        const canvas = document.createElement('canvas');
+        // 正方形に中央クロップしてから縮小
+        const side = Math.min(img.width, img.height);
+        const sx = (img.width - side) / 2;
+        const sy = (img.height - side) / 2;
+        canvas.width = maxSize;
+        canvas.height = maxSize;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, sx, sy, side, side, 0, 0, maxSize, maxSize);
+        resolve(canvas.toDataURL('image/jpeg', 0.85));
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+document.getElementById('f_photo').addEventListener('change', async (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  try{
+    const dataUrl = await resizeImageFile(file, 240);
+    pendingPhoto = dataUrl;
+    document.getElementById('photoPreviewWrap').innerHTML =
+      `<img class="photo-preview-thumb" src="${dataUrl}" alt="preview">`;
+  }catch(err){
+    alert('画像の読み込みに失敗しました');
+  }
+});
+
+function load(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    oshiList = raw ? JSON.parse(raw) : [];
+  }catch(e){ oshiList = []; }
+  if(oshiList.length && !activeId){ activeId = oshiList[0].id; }
+}
+function save(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(oshiList)); }catch(e){}
+}
+
+function daysSince(dateStr){
+  if(!dateStr) return null;
+  const d = new Date(dateStr);
+  const now = new Date();
+  d.setHours(0,0,0,0); now.setHours(0,0,0,0);
+  return Math.round((now - d) / 86400000);
+}
+
+// 推し歴が長いほど深いインクの色になる（Ink Lanternとは逆方向の意味づけ）
+function depthColor(days){
+  if(days === null) return 'var(--muted)';
+  if(days < 30) return 'var(--deep1)';
+  if(days < 100) return 'var(--deep2)';
+  if(days < 365) return 'var(--deep3)';
+  return 'var(--deep4)';
+}
+
+function openModal(id){
+  editingId = id ?? null;
+  document.getElementById('modalTitle').textContent = id ? '推しの情報を編集' : '推しを登録する';
+  const fields = ['f_name','f_metDate','f_likes','f_badges','f_gifts','f_birthday','f_debut','f_danmaku','f_ng'];
+  document.getElementById('f_photo').value = '';
+  const previewWrap = document.getElementById('photoPreviewWrap');
+  if(id){
+    const o = oshiList.find(x=>x.id===id);
+    document.getElementById('f_name').value = o.name || '';
+    document.getElementById('f_metDate').value = o.metDate || '';
+    document.getElementById('f_likes').value = o.likes || '';
+    document.getElementById('f_badges').value = o.badges || '';
+    document.getElementById('f_gifts').value = o.gifts || '';
+    document.getElementById('f_birthday').value = o.birthday || '';
+    document.getElementById('f_debut').value = o.debut || '';
+    document.getElementById('f_danmaku').value = o.danmaku || '';
+    document.getElementById('f_ng').value = o.ng || '';
+    pendingPhoto = o.photo || null;
+    previewWrap.innerHTML = pendingPhoto ? `<img class="photo-preview-thumb" src="${pendingPhoto}" alt="preview">` : '';
+  } else {
+    fields.forEach(id=>document.getElementById(id).value='');
+    pendingPhoto = null;
+    previewWrap.innerHTML = '';
+  }
+  document.getElementById('modalBg').classList.add('open');
+}
+function closeModal(){
+  document.getElementById('modalBg').classList.remove('open');
+  editingId = null;
+}
+function saveOshi(){
+  const name = document.getElementById('f_name').value.trim();
+  if(!name){ alert('推しの名前を入力してください'); return; }
+  const data = {
+    id: editingId || (Date.now()+Math.random().toString(16).slice(2)),
+    name,
+    photo: pendingPhoto,
+    metDate: document.getElementById('f_metDate').value,
+    likes: document.getElementById('f_likes').value.trim(),
+    badges: document.getElementById('f_badges').value.trim(),
+    gifts: document.getElementById('f_gifts').value.trim(),
+    birthday: document.getElementById('f_birthday').value,
+    debut: document.getElementById('f_debut').value,
+    danmaku: document.getElementById('f_danmaku').value.trim(),
+    ng: document.getElementById('f_ng').value.trim(),
+  };
+  if(editingId){
+    oshiList = oshiList.map(o=> o.id===editingId ? data : o);
+  } else {
+    oshiList.push(data);
+    activeId = data.id;
+  }
+  save();
+  closeModal();
+  render();
+}
+function deleteOshi(id){
+  if(!confirm('この推しの記録を削除しますか？')) return;
+  oshiList = oshiList.filter(o=>o.id!==id);
+  if(activeId===id){ activeId = oshiList.length ? oshiList[0].id : null; }
+  save();
+  render();
+}
+function selectOshi(id){
+  activeId = id;
+  render();
+}
+
+function fmtDate(d){ return d || '未記入'; }
+
+function render(){
+  const tabsEl = document.getElementById('oshiTabs');
+  tabsEl.innerHTML = oshiList.map(o=>
+    `<div class="oshi-tab ${o.id===activeId?'active':''}" onclick="selectOshi('${o.id}')">${escapeHtml(o.name)}</div>`
+  ).join('') + `<div class="oshi-tab add" onclick="openModal()">＋ 推しを追加</div>`;
+
+  const main = document.getElementById('mainArea');
+  if(!oshiList.length){
+    main.innerHTML = `<div class="empty-state">まだ推しが登録されていません。<br>「＋ 推しを追加」から、応援してる人を記録してみてください。</div>`;
+    return;
+  }
+  const o = oshiList.find(x=>x.id===activeId) || oshiList[0];
+  const days = daysSince(o.metDate);
+
+  main.innerHTML = `
+    <div class="hero-card">
+      <div class="oshi-name">${escapeHtml(o.name)}</div>
+      <div class="photo-circle" onclick="openModal('${o.id}')">
+        ${o.photo
+          ? `<img src="${o.photo}" alt="${escapeHtml(o.name)}">`
+          : `<span class="placeholder-icon">🖋️</span>`}
+        <div class="photo-hint">タップで編集</div>
+      </div>
+      <div class="days-text">${days===null ? '出逢った日、未記入' : `出逢ってから<span class="accent">${days}</span>日`}</div>
+      <div class="day-caption">出会った日：${fmtDate(o.metDate)}</div>
+      <div class="btn-row">
+        <button class="btn ghost block" onclick="openModal('${o.id}')">編集する</button>
+        <button class="btn danger block" onclick="deleteOshi('${o.id}')">削除</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <div class="field-label"><span class="field-icon">🎵</span>好きなこと</div>
+      ${o.likes ? `<div class="value-text">${escapeHtml(o.likes)}</div>` : `<div class="value-empty">未記入</div>`}
+    </div>
+
+    <div class="field">
+      <div class="field-label"><span class="field-icon">⭐</span>バッジ獲得記念日</div>
+      ${o.badges ? `<div class="value-text">${escapeHtml(o.badges)}</div>` : `<div class="value-empty">未記入</div>`}
+    </div>
+
+    <div class="field">
+      <div class="field-label"><span class="field-icon">💝</span>大きなギフトを送った日</div>
+      ${o.gifts ? `<div class="value-text">${escapeHtml(o.gifts)}</div>` : `<div class="value-empty">未記入</div>`}
+    </div>
+
+    <div class="field">
+      <div class="field-label"><span class="field-icon">🎂</span>誕生日 ／ <span class="field-icon">🌱</span>初配信日</div>
+      <div class="value-text">${fmtDate(o.birthday)} ／ ${fmtDate(o.debut)}</div>
+    </div>
+
+    <div class="field">
+      <div class="field-label"><span class="field-icon">📣</span>弾幕記入欄</div>
+      ${o.danmaku ? `<div class="value-text">${escapeHtml(o.danmaku)}</div>` : `<div class="value-empty">未記入</div>`}
+    </div>
+
+    <div class="field ng">
+      <div class="field-label">⚠️ NG事項・気をつけたいこと</div>
+      ${o.ng ? `<div class="value-text">${escapeHtml(o.ng)}</div>` : `<div class="value-empty">未記入</div>`}
+    </div>
+  `;
+}
+
+function escapeHtml(s){
+  if(!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+load();
+render();
+</script>
+</body>
+</html>
